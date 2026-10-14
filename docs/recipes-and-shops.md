@@ -1,4 +1,4 @@
-[Index](../README.md) | Previous: [Entities](entities.md) | Next: [Players and worlds](players-and-worlds.md)
+[Index](../README.md) | Previous: [Enemy AI and projectiles](enemy-ai.md) | Next: [Tilesets and texture packs](tilesets.md)
 
 # Recipes and shops
 

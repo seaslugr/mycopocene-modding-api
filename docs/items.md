@@ -8,12 +8,14 @@
 local id = caffeine.add_item(def)
 ```
 
-Registers an item. Returns its id. An item name must be unique in its mod. Set the `name` global of the mod before the first call.
+Registers an item. Returns its id. An item name must be unique in its mod. Set the `name` global of the mod before the first call. Call it while the mod loads. In a callback it raises an error. See [Content functions after the load](environment.md#content-functions-after-the-load).
 
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `name` | string | required | Display name. |
-| `icon_tile_id` | integer | `0` | Tile index in the item spritesheet. Find it with the Picker tool. |
+| `icon` | string | none | Image file in the mod folder. See [Icons](#icons). |
+| `icon_index` | integer | `0` | Tile of the `icon` image. |
+| `icon_tile_id` | integer | `0` | Tile index in the base game item sheet. Find it with the Picker tool. Use it only to reuse a base game icon. |
 | `category` | string | `"Item"` | See [Categories](#categories). |
 | `rarity` | string | `"Common"` | `"Common"`, `"Uncommon"`, `"Rare"`, `"Epic"`, `"Legendary"`, `"Mythic"`, `"Exotic"`, `"Hazardous"`. Sets the tooltip color. |
 | `description` | string | `""` | Tooltip text. |
@@ -26,7 +28,7 @@ Registers an item. Returns its id. An item name must be unique in its mod. Set t
 | `disassembleable` | boolean | `false` | The player can break it down. |
 | `gear_group` | string | `"none"` | `"sword"`, `"spear"`, `"dagger"`, `"bound"`, `"mace"`, `"armour"`. Selects which Modifications fit. A weapon group also sets `weapon_class`. |
 | `weapon_class` | string | from `gear_group` | `"sword"`, `"mace"`, `"dagger"`, `"spear"`, `"bound"`. The moveset of a weapon. |
-| `anim_frames` | integer | `0` | Frame count of an animated icon. `icon_tile_id` is the first frame. |
+| `anim_frames` | integer | `0` | Frame count of an animated icon. The icon tile is the first frame, and the next tiles are the next frames. |
 | `anim_speed` | number | `0` | Seconds for each icon frame. |
 | `stats` | array | none | Up to 6 entries. See [Stats](#stats). |
 | `modif` | table | none | See [Modifications](#modifications). |
@@ -34,6 +36,65 @@ Registers an item. Returns its id. An item name must be unique in its mod. Set t
 | `shape_random_orient` | boolean | `false` | A shaped item starts with a random quarter turn at the bench. |
 | `host_use` | boolean | `false` | Online, the host also runs `on_use`. Set it when `on_use` heals or damages. |
 | `on_use` | function | none | See [on_use](hooks.md#on_use). |
+
+## Icons
+
+An icon is a 16 by 16 pixel tile. Put a PNG file in the mod folder and name it in `icon`.
+
+```lua
+caffeine.add_item({
+    name = "Spider Web",
+    icon = "sprites/web.png",
+})
+```
+
+One image can hold many icons. The image is a grid of 16 pixel tiles. `icon_index` picks the tile. The count starts at `0` and goes row by row, left to right.
+
+```
+sprites/items.png, 48 by 32 pixels:
+
+  +----+----+----+
+  | 0  | 1  | 2  |
+  +----+----+----+
+  | 3  | 4  | 5  |
+  +----+----+----+
+```
+
+```lua
+caffeine.add_item({ name = "Spider Web", icon = "sprites/items.png", icon_index = 0 })
+caffeine.add_item({ name = "Spider Fang", icon = "sprites/items.png", icon_index = 1 })
+```
+
+Rules:
+
+- The width and the height of the image must be a multiple of 16, and 4096 or less.
+- Use a PNG file. A compressed image format, such as a DXT `.dds` file, is an error.
+- The path is relative to the mod folder and must stay in it.
+- The game makes each pixel fully opaque or fully clear. An alpha below half becomes clear.
+- An image that does not load, or an `icon_index` past the last tile, is an error.
+- All mods together can add 3872 icon tiles and 256 icon images.
+
+An animated icon uses tiles that follow each other in the image:
+
+```lua
+caffeine.add_item({
+    name = "Blinker",
+    icon = "sprites/items.png",
+    icon_index = 4,
+    anim_frames = 2,
+    anim_speed = 0.4,
+})
+```
+
+This item shows tile 4, then tile 5, each for 0.4 seconds.
+
+`edit_item` accepts `icon` too, so a mod can give a base game item new art:
+
+```lua
+caffeine.edit_item("health_vial", { icon = "sprites/red_vial.png" })
+```
+
+Online, a host and a guest must load the same content mods in the same order. If they do not, a guest can see a wrong icon on the weapon of another player.
 
 ## Categories
 
@@ -73,7 +134,7 @@ A weapon needs `category = "Weapon"`, `equipable = true` and a `gear_group`.
 ```lua
 caffeine.add_item({
     name = "Glass Dagger",
-    icon_tile_id = 77,
+    icon = "sprites/dagger.png",
     category = "Weapon",
     rarity = "Rare",
     equipable = true,
@@ -92,7 +153,7 @@ caffeine.add_item({
 ```lua
 caffeine.add_item({
     name = "Big Vial",
-    icon_tile_id = 31,
+    icon = "sprites/big_vial.png",
     category = "Consumable",
     usable = true,
     host_use = true,
@@ -114,7 +175,7 @@ A Modification is an item the player puts on gear at the crafting bench.
 ```lua
 caffeine.add_item({
     name = "Venom Gland",
-    icon_tile_id = 40,
+    icon = "sprites/gland.png",
     category = "Modification",
     stats = { { type = "attack_damage", value = 2 } },
     modif = {
@@ -138,7 +199,7 @@ caffeine.add_item({
 | `magnitude` | integer | Strength of the status. |
 | `duration` | number | Seconds of the status. |
 
-Status names: `"poison"`, `"burn"`, `"ice"`, `"lightning"`, `"cure"`, `"light"`, `"magic_shield"`, `"reflect"`, `"heal"`, `"detect"`, `"invisible"`, `"jump"`, `"gravity"`, `"max_hp"`, `"defense"`, `"restore"`, `"absorb"`, `"atk_speed"`.
+Status names: `"poison"`, `"burn"`, `"ice"`, `"lightning"`, `"cure"`, `"light"`, `"magic_shield"`, `"reflect"`, `"heal"`, `"detect"`, `"invisible"`, `"jump"`, `"gravity"`, `"max_hp"`, `"defense"`, `"restore"`, `"absorb"`, `"atk_speed"`, and the key of each [mod status](statuses.md).
 
 `shape` is the footprint of the Modification on the crafting grid. It is a list of up to 5 cells. Each cell is `{ column, row }` from the anchor cell. The first cell must be `{ 0, 0 }`.
 
@@ -155,7 +216,7 @@ Status names: `"poison"`, `"burn"`, `"ice"`, `"lightning"`, `"cure"`, `"light"`,
 caffeine.edit_item(item, patches)
 ```
 
-Changes fields of an item that exists. It works on base game items and on mod items. `patches` accepts each field of `add_item`. Only the fields in `patches` change. `stats` replaces the full list.
+Changes fields of an item that exists. It works on base game items and on mod items. `patches` accepts each field of `add_item`. Only the fields in `patches` change. `stats` replaces the full list. Call it while the mod loads, as `add_item`.
 
 ```lua
 caffeine.edit_item("health_vial", { rarity = "Uncommon", value = 50 })

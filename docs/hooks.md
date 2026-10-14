@@ -10,7 +10,7 @@ caffeine.on_level_up(function(level, world, player)
 end)
 ```
 
-More than one mod can listen to the same hook. Listeners run in load order. A listener stays active until the next mod load.
+More than one mod can listen to the same hook. Listeners run in load order. A listener stays active until the next mod load, or until [`remove_hook`](#caffeineremove_hook) removes it.
 
 For the `world` and `player` arguments, see [Players and worlds](players-and-worlds.md).
 
@@ -65,6 +65,26 @@ caffeine.on_player_damaged(function(damage, new_health, world, player)
 end)
 ```
 
+## caffeine.remove_hook
+
+```lua
+local removed = caffeine.remove_hook(handle)
+```
+
+Each hook function returns a handle. `remove_hook` removes that listener. It returns `true` if the handle was active.
+
+```lua
+local first_kill
+first_kill = caffeine.on_enemy_killed(function(info, world)
+    caffeine.log("first kill of this session")
+    caffeine.remove_hook(first_kill)
+end)
+```
+
+It works for each hook in the list above, for [`on_sfx` and `on_music`](audio.md) and for [`on_draw_ui`](ui.md#caffeineon_draw_ui). A listener can remove itself.
+
+A mod can remove its own listeners only. With the handle of a listener of a different mod, `remove_hook` does nothing and returns `false`. The same rule applies to `remove_passive` and `clear_interval`.
+
 ## caffeine.add_passive
 
 ```lua
@@ -96,7 +116,7 @@ end)
 local removed = caffeine.remove_passive(handle)
 ```
 
-Stops a passive. Returns `true` if the handle was active. A passive can remove itself.
+Stops a passive of your mod. Returns `true` if the handle was active. A passive can remove itself.
 
 ## caffeine.set_interval
 
@@ -124,7 +144,7 @@ The test of `get_index` makes the callback do its work one time in splitscreen.
 local removed = caffeine.clear_interval(handle)
 ```
 
-Stops an interval. Returns `true` if the handle was active.
+Stops an interval of your mod. Returns `true` if the handle was active.
 
 ```lua
 local countdown = 3
@@ -158,6 +178,9 @@ The game calls it when a player uses the item. `player` is the player that used 
 |---|---|
 | `false` | The item stays in the inventory. |
 | anything else, or nothing | The game removes one item. |
+| an error | The item stays in the inventory. The error goes to the console. |
+
+An `on_use` that raises an error did not do its work, so the player keeps the item. This includes a `host only` error on a guest. See [Item use](online.md#item-use).
 
 Set `usable = true` on the item, so the player can use it.
 

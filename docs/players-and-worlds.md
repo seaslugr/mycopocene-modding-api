@@ -1,4 +1,4 @@
-[Index](../README.md) | Previous: [Recipes and shops](recipes-and-shops.md) | Next: [Hooks and callbacks](hooks.md)
+[Index](../README.md) | Previous: [Code objects](objects.md) | Next: [Hooks and callbacks](hooks.md)
 
 # Players and worlds
 
@@ -92,6 +92,7 @@ end, 60)
 | `player:get_atk_speed()` | number | Attack rate multiplier. |
 | `player:get_stat(name)` | number or nil | `"attack_damage"`, `"spell_damage"`, `"defense"`, `"move_speed"`, `"atk_speed"`, `"max_health"`, `"health"`, `"hit_count"`, `"level"`, `"xp"`. `nil` for an unknown name. |
 | `player:count_item(item)` | integer | Quantity in the inventory. |
+| `player:get_status(status)` | number, integer or nil | Seconds left and magnitude of a status. See [Status effects](statuses.md#player-methods). |
 
 ### Change
 
@@ -99,11 +100,13 @@ end, 60)
 |---|---|---|
 | `player:give_item(item, qty)` | boolean | Adds items and shows the pickup notice. `qty` defaults to `1`. `false` when the items did not fit. |
 | `player:remove_item(item, qty)` | boolean | Removes items. `qty` defaults to `1`. |
-| `player:add_xp(amount)` | nothing | Adds XP. |
+| `player:add_xp(amount)` | nothing | Adds XP, as an enemy kill does. The player gets each level the XP pays for, and `on_level_up` fires. `amount` must be `0` or more. |
 | `player:heal(amount)` | nothing | Adds health up to the maximum. Host only. |
 | `player:damage(amount)` | nothing | Damage through defense, with no knockback. Host only. |
 | `player:damage_raw(amount)` | boolean | Damage that ignores defense. Host only. |
-| `player:teleport(x, y)` | nothing | Moves the player in its room and stops it. Host only. |
+| `player:teleport(x, y)` | nothing | Moves the player in its room and stops it. `x` and `y` must be finite numbers. Host only. |
+| `player:apply_status(status, duration, magnitude)` | nothing | Gives a status. Host only. |
+| `player:clear_status(status)` | boolean | Takes a status off. Host only. |
 
 `damage_raw` is scaled to a 100 health pool. `damage_raw(50)` removes half of the health of any player. It returns `false` for a dead player and in godmode.
 
@@ -132,15 +135,18 @@ Each world method that uses a player takes an optional `player_idx`. It is a roo
 | `world:get_chest_count()` | integer | Loot chests the first player in the room has not emptied. |
 | `world:get_expedition_time()` | number | Seconds of the current run. |
 | `world:get_expedition_active()` | boolean | A timed run is in progress. |
+| `world:get_fluid(x, y)` | string, number or nil | The fluid key and amount at a place. See [Fluids](fluids.md#worldget_fluid). |
 
 ### Change
 
 | Method | Returns | Description |
 |---|---|---|
 | `world:damage_player(amount, player_idx)` | nothing | Damage through defense, with no knockback. Host only. |
-| `world:teleport_player(x, y, player_idx)` | nothing | Moves the player in the room. Host only. |
-| `world:teleport_player_to_room(room_name)` | boolean | Loads a room into this world. `true` if the room loaded. Host only. |
+| `world:teleport_player(x, y, player_idx)` | nothing | Moves the player in the room. `x` and `y` must be finite numbers. Host only. |
+| `world:teleport_player_to_room(room_name)` | boolean | Sends each player in this world to the room. The move happens at the end of the tick, as a portal crossing does, so the callback ends in the old room. A remote player moves too. `true` if the room exists. Host only. |
 | `world:spawn_item(item, qty, x, y, player_idx)` | nothing | Drops an item. `qty` defaults to `1`. The position defaults to the player. Host only. |
 | `world:spawn_entity(entity, x, y)` | boolean | Spawns an entity. `true` if it spawned. Host only. |
+| `world:spawn_projectile(projectile, x, y, vx, vy, damage, friendly)` | boolean | Spawns a projectile. See [Enemy AI and projectiles](enemy-ai.md#worldspawn_projectile). Host only. |
+| `world:add_fluid(fluid, x, y, amount)` | nothing | Pours a fluid into a cell. See [Fluids](fluids.md#worldadd_fluid). Host only. |
 
 Positions are in pixels. One tile is 48 pixels.

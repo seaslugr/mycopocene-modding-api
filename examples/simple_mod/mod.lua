@@ -1,10 +1,6 @@
-name = "Simple Mod"
-version = "1.0.0"
-author = "example_author"
-
 local spider_web = caffeine.add_item({
     name = "Spider Web",
-    icon_tile_id = 210,
+    icon = "sprites/web.png",
     category = "Material",
     rarity = "Uncommon",
     value = 25,
@@ -14,7 +10,11 @@ local spider_web = caffeine.add_item({
 
 local spider = caffeine.add_entity({
     name = "spider",
-    sprite_tile_id = 188,
+    sheet = "sprites/spider.png",
+    anims = {
+        idle = { x = 0, y = 0, frames = 2, speed = 0.6, loop = true },
+        walk = { x = 0, y = 1, frames = 4, speed = 0.12, loop = true },
+    },
     max_health = 40,
     contact_damage = 8,
     xp_reward = 20,

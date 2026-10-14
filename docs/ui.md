@@ -1,4 +1,4 @@
-[Index](../README.md) | Previous: [Console](console.md) | Next: [Online play](online.md)
+[Index](../README.md) | Previous: [Sound and music](audio.md) | Next: [Mod data](data.md)
 
 # Custom UI
 
@@ -7,10 +7,10 @@ Mods draw in screen space, with the HUD.
 ## caffeine.on_draw_ui
 
 ```lua
-caffeine.on_draw_ui(fn)
+local handle = caffeine.on_draw_ui(fn)
 ```
 
-Calls `fn()` one time for each frame. The draw functions work only in this callback. The callback gets no arguments.
+Calls `fn()` one time for each frame. The draw functions work only in this callback. The callback gets no arguments. Returns a handle. [`caffeine.remove_hook(handle)`](hooks.md#caffeineremove_hook) stops the listener from the next frame.
 
 ```lua
 caffeine.on_draw_ui(function()
@@ -37,7 +37,7 @@ Colors `r, g, b, a` are `0` to `255`.
 
 ### Images
 
-`path` is relative to the folder of the mod. The game loads the file one time and keeps it.
+`path` is relative to the folder of the mod and must stay in it. An absolute path, a path with `:` or a path with `..` draws nothing. The game loads the file one time and keeps it.
 
 ```lua
 caffeine.on_draw_ui(function()
@@ -230,5 +230,3 @@ Call `ui_capture_keyboard(false)` when the field loses focus. If you do not, the
 | Images in use | 64 |
 | Draw calls in one frame, across all mods | 256 |
 | Text length of one draw call | 191 bytes |
-
-Mod UI has mouse and keyboard input only. It has no gamepad navigation.

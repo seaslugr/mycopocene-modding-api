@@ -1,7 +1,3 @@
-name = "Hot Potato"
-version = "1.0.0"
-author = "example_author"
-
 local SPAWN_SECONDS = 10.0
 local FUSE_SECONDS = 2.0
 local TICK_SECONDS = 0.25

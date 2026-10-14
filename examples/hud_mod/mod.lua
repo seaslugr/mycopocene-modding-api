@@ -1,7 +1,3 @@
-name = "HUD Mod"
-version = "1.0.0"
-author = "example_author"
-
 local ui_rect = caffeine.ui_rect
 local ui_text = caffeine.ui_text
 

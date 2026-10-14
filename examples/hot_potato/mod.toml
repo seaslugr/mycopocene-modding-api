@@ -1,0 +1,5 @@
+name = "Hot Potato"
+version = "1.0.0"
+author = "example_author"
+icon = "icon.png"
+description = "During a run, each player gets a Hot Potato every 10 seconds. Drop it in 2 seconds or it explodes."

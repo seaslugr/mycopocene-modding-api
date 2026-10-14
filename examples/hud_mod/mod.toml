@@ -1,0 +1,5 @@
+name = "HUD Mod"
+version = "1.0.0"
+author = "example_author"
+icon = "icon.png"
+description = "Shows a kill counter on the HUD.\n\nPress K for the settings. The console command 'kills' shows or sets the counter."

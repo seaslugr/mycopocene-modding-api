@@ -1,4 +1,4 @@
-[Index](../README.md) | Previous: [Hooks and callbacks](hooks.md) | Next: [Custom UI](ui.md)
+[Index](../README.md) | Previous: [Hooks and callbacks](hooks.md) | Next: [Sound and music](audio.md)
 
 # Console
 

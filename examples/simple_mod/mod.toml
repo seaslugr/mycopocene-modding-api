@@ -1,0 +1,5 @@
+name = "Simple Mod"
+version = "1.0.0"
+author = "example_author"
+icon = "icon.png"
+description = "Adds the Spider Web material, a spider enemy that drops it, a recipe and a shop entry."
