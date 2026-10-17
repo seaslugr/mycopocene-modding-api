@@ -2,13 +2,13 @@
 
 # Recipes and shops
 
-## caffeine.add_recipe
+## myco.add_recipe
 
 ```lua
-local recipe_data = caffeine.add_recipe(def)
+local recipe_data = myco.add_recipe(def)
 ```
 
-Registers a crafting bench recipe. Returns the recipe data value. The first mod recipe is `1000`.
+Registers a crafting bench recipe. Returns its recipe data value, a number that names the recipe. A [Schematic](#schematics) uses it. The first mod recipe gets `1000`, the next `1001`, and so on.
 
 | Field | Type | Default | Description |
 |---|---|---|---|
@@ -27,7 +27,7 @@ Registers a crafting bench recipe. Returns the recipe data value. The first mod 
 A simple recipe is a list. The game puts the ingredients side by side.
 
 ```lua
-caffeine.add_recipe({
+myco.add_recipe({
     result_item_id = "health_vial",
     ingredients = {
         { item_id = "My Mod:Spider Web", qty = 3 },
@@ -39,7 +39,7 @@ caffeine.add_recipe({
 A shaped recipe gives a cell for each ingredient.
 
 ```lua
-caffeine.add_recipe({
+myco.add_recipe({
     name = "Web Blade",
     result_item_id = "My Mod:Web Blade",
     ingredients = {
@@ -73,10 +73,10 @@ The data value of a mod recipe changes with the load order. The game does not sa
 | `4` | Camp merchant |
 | `5` | Magus |
 
-## caffeine.add_shop_entry
+## myco.add_shop_entry
 
 ```lua
-caffeine.add_shop_entry(def)
+myco.add_shop_entry(def)
 ```
 
 Adds an item to a vendor.
@@ -86,28 +86,28 @@ Adds an item to a vendor.
 | `item_id` | item | required | Item to sell. |
 | `price` | integer | `0` | Gold cost. |
 | `vendor_id` | integer | `0` | Vendor. |
-| `stock` | integer | `0` | Units for sale after a restock. `0` is no limit. |
+| `stock` | integer | `0` | Units for sale. `0` is no limit. When the stock refills can change in a later version, so do not depend on it. |
 
 ```lua
-caffeine.add_shop_entry({ item_id = "My Mod:Spider Web", price = 20, stock = 5 })
+myco.add_shop_entry({ item_id = "My Mod:Spider Web", price = 20, stock = 5 })
 ```
 
-## caffeine.edit_shop_entry
+## myco.edit_shop_entry
 
 ```lua
-caffeine.edit_shop_entry(vendor_id, item, patches)
+myco.edit_shop_entry(vendor_id, item, patches)
 ```
 
 Changes `price` or `stock` of an entry that exists. It does nothing when the vendor does not sell the item.
 
 ```lua
-caffeine.edit_shop_entry(0, "health_vial", { price = 10 })
+myco.edit_shop_entry(0, "health_vial", { price = 10 })
 ```
 
-## caffeine.remove_shop_entry
+## myco.remove_shop_entry
 
 ```lua
-local removed = caffeine.remove_shop_entry(vendor_id, item)
+local removed = myco.remove_shop_entry(vendor_id, item)
 ```
 
 Removes an entry. Returns `true` if the entry was there.

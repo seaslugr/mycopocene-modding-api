@@ -4,10 +4,10 @@
 
 A code object is a thing a room places on a tile: a checkpoint, a steam vent, a heal station. A mod can add its own code objects with Lua callbacks. A room places them with the Room Builder, as it places the objects of the game.
 
-## caffeine.add_object
+## myco.add_object
 
 ```lua
-local index = caffeine.add_object(def)
+local index = myco.add_object(def)
 ```
 
 Adds a code object and returns its index.
@@ -29,7 +29,7 @@ Adds a code object and returns its index.
 | `on_interact` | function | none | `on_interact(obj, world, player)`. A player pressed Interact near the object. The game shows the Interact prompt only for an object with this callback. |
 
 ```lua
-caffeine.add_object({
+myco.add_object({
     key = "mymod_bounce_pad",
     name = "Bounce Pad",
     icon = "objects/pad.png",
@@ -47,6 +47,8 @@ caffeine.add_object({
     end,
 })
 ```
+
+`myco.get_object_count()` returns the number of mod code objects, across all mods.
 
 ## Place an object in a room
 
@@ -79,7 +81,7 @@ Each callback gets `obj`, a handle to one placed object.
 Do not keep `obj` after the callback returns. When its room unloads, the handle raises an error.
 
 ```lua
-caffeine.add_object({
+myco.add_object({
     key = "mymod_timer_door",
     name = "Timer Door",
     icon = "objects/door.png",
@@ -95,9 +97,9 @@ caffeine.add_object({
 
 ## When an object runs
 
-An object runs while its room is the room of a world, so while a player is in that room. A room seen through a seam from the next room does not run or draw its mod objects.
+An object runs while a player is in its room. A room that a player only sees across the edge of the next room does not run or draw its mod objects.
 
-Each world slot that has the room runs its own copy. In splitscreen, two players in the same room share one copy.
+Each [world](players-and-worlds.md#what-a-world-is) with the room runs its own copy of the object. In splitscreen, two players in the same room share one copy.
 
 When the room unloads, the copy goes away with its `get_data` table. When the room loads again, `on_spawn` runs again.
 

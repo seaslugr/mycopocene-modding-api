@@ -31,7 +31,7 @@ A room name must be unique. Use a prefix for your rooms, for example `mymod_spid
 To send a player to a room of your mod:
 
 ```lua
-caffeine.add_command("den", "den - go to the spider den", function(args, world, player)
+myco.add_command("den", "den - go to the spider den", function(args, world, player)
     world:teleport_player_to_room("mymod_spider_den")
 end)
 ```
@@ -84,4 +84,4 @@ For players:
 - To show if a mod that is off adds content, the game runs its `mod.lua` one time in a separate Lua state where each API function does nothing.
 - A Workshop mod and a local mod share one load order. The `requires` rules of `mod.toml` work across both.
 
-Because of the second point, keep the top level of `mod.lua` free of work that needs real API results.
+Keep the top level of `mod.lua` free of work that needs real API results. A mod that is off runs it with API functions that do nothing.

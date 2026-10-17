@@ -36,7 +36,7 @@ Rules:
 - The width and the height of the image must be a multiple of 16.
 - A room uses one tileset. A tile id is the index of the tile in the image, row by row from 0.
 - Do not move a tile to a different place in the image after rooms use it. The rooms store the index.
-- You can make the image larger. Add new tiles at the end, in new rows. A wider image changes each index.
+- To add tiles, add new rows at the bottom of the image. Keep the width the same. A wider image moves each tile to a new index.
 
 ### How a room stores the tileset
 
@@ -58,10 +58,10 @@ The game does not read the types. The flags of each cell are in the room file.
 
 ## Replace a file of the game
 
-### caffeine.replace_asset
+### myco.replace_asset
 
 ```lua
-caffeine.replace_asset(asset, file)
+myco.replace_asset(asset, file)
 ```
 
 Makes the game load `file` of the mod in place of the game file `asset`.
@@ -71,14 +71,20 @@ Makes the game load `file` of the mod in place of the game file `asset`.
 | `asset` | Path of the game file, from the game folder. It starts with `assets/`. |
 | `file` | Path of the replacement, from the mod folder. |
 
-```lua
+`mod.toml`:
+
+```toml
 name = "Autumn Pack"
 version = "1.0.0"
 author = "your_name"
 description = "Autumn colors for the main tileset and the item icons."
+```
 
-caffeine.replace_asset("assets/tileset.png", "art/tileset.png")
-caffeine.replace_asset("assets/items/itemlist1.png", "art/items.png")
+`mod.lua`:
+
+```lua
+myco.replace_asset("assets/tileset.png", "art/tileset.png")
+myco.replace_asset("assets/items/itemlist1.png", "art/items.png")
 ```
 
 Rules:
@@ -113,7 +119,7 @@ Music that the game streams from the disk is not replaced.
 
 ### Online
 
-`replace_asset` changes only what this machine shows and plays. A mod that only replaces assets is no content mod. A guest can use a texture pack that the host does not have.
+`replace_asset` changes only what this machine shows and plays. A mod that only replaces assets is not a content mod. A guest can use a texture pack that the host does not have.
 
 ## Which one to use
 

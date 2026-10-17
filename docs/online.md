@@ -1,4 +1,4 @@
-[Index](../README.md) | Previous: [Mod data](data.md) | Next: [Rooms and Workshop](rooms-and-workshop.md)
+[Index](../README.md) | Previous: [Achievements](achievements.md) | Next: [Rooms and Workshop](rooms-and-workshop.md)
 
 # Online play
 
@@ -12,19 +12,28 @@ Each API function has a tier. The tier says what the function does on a guest.
 
 | Tier | Functions | On a guest |
 |---|---|---|
-| View | Lookups, getters, hook registration, UI, sound and music, `log`, `add_command`, `replace_asset`, `save_data`, `load_data`, `delete_data` | Works. Mod data is on each machine. |
-| Owner | `player:give_item`, `player:remove_item`, `player:add_xp` | Works. Each player owns its inventory and XP. |
-| Authority | `player:heal`, `player:damage`, `player:damage_raw`, `player:teleport`, `world:damage_player`, `world:teleport_player`, `world:teleport_player_to_room`, `world:spawn_item`, `world:spawn_entity`, `world:spawn_projectile`, `world:add_fluid`, `player:apply_status`, `player:clear_status`, `caffeine.spawn_entity`, the enemy handle methods that change the enemy | Raises a `host only` error. |
+| View | Lookups, getters, hook registration, UI, sound and music, `log`, `add_command`, `add_keybind`, `add_achievement`, `has_achievement`, `get_achievement_progress`, `replace_asset`, `save_data`, `load_data`, `delete_data` | Works. Mod data and achievements are on each machine. |
+| Owner | `player:give_item`, `player:remove_item`, `player:add_xp`, `player:unlock_achievement`, `player:add_achievement_progress` | Works. Each player owns its inventory, XP and achievements. |
+| Authority | `player:heal`, `player:damage`, `player:damage_raw`, `player:teleport`, `world:damage_player`, `world:teleport_player`, `world:teleport_player_to_room`, `world:spawn_item`, `world:spawn_entity`, `world:spawn_projectile`, `world:add_fluid`, `player:apply_status`, `player:clear_status`, `myco.spawn_entity`, the enemy handle methods that change the enemy | Raises a `host only` error. |
 | Content | `add_item`, `add_entity`, `add_recipe`, `add_shop_entry`, `edit_item`, `edit_entity`, `edit_shop_entry`, `remove_shop_entry`, `add_fluid`, `edit_fluid`, `add_status`, `edit_status`, `add_object`, `add_projectile` | Works at load. Host and guest must match. On each machine, a call after the load raises an error. |
 
 An Authority error in a callback is a normal callback error. It goes to the console, and 8 errors in a row disable the callback. See [Errors](environment.md#errors).
+
+## Where callbacks run
+
+| Callback | Runs on |
+|---|---|
+| Player hooks, `add_passive`, `set_interval`, keybinds, `on_draw_ui` | Each machine, for its local players. |
+| `on_enemy_killed`, `on_death`, enemy `ai` and `on_attack` | The host only. |
+| `on_use` | The machine of the player that used the item. See [Item use](#item-use). |
+| Code object callbacks | See [Code objects](objects.md#online). |
 
 ## Write a mod that works online
 
 Guard the Authority calls. `pcall` is the simple way.
 
 ```lua
-caffeine.set_interval(function(world, player)
+myco.set_interval(function(world, player)
     local x, y = player:get_pos()
     pcall(world.spawn_entity, world, "primitive", x + 300, y)
 end, 10.0)
@@ -79,7 +88,7 @@ When a guest uses a `host_use` item, `on_use` runs two times: one time on the gu
 Do not make the heal depend on `count_item`, because the host sees `0`. The return value of `on_use` counts on the guest only.
 
 ```lua
-caffeine.add_item({
+myco.add_item({
     name = "Big Vial",
     icon = "sprites/big_vial.png",
     category = "Consumable",

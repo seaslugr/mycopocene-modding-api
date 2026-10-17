@@ -4,15 +4,15 @@
 
 A mod entity can have its own AI, its own attacks and its own projectiles.
 
-- [`caffeine.add_projectile`](#caffeineadd_projectile) adds a projectile.
+- [`myco.add_projectile`](#mycoadd_projectile) adds a projectile.
 - `shoots_on_attack = true` with `projectile = "key"` makes the built-in AI fire a mod projectile.
 - [`on_attack`](#on_attack) keeps the built-in AI and replaces its attack.
 - [`ai`](#ai) replaces all of the AI.
 
-## caffeine.add_projectile
+## myco.add_projectile
 
 ```lua
-local id = caffeine.add_projectile(def)
+local id = myco.add_projectile(def)
 ```
 
 Registers a projectile. Returns its id. Call it at load time, as `add_item`.
@@ -32,14 +32,14 @@ Registers a projectile. Returns its id. Call it at load time, as `add_item`.
 | `bounces` | integer | `0` | Number of wall bounces. `0` to `99`. |
 | `damage` | number | `1` | Multiplier of the base damage. `0` to `100`. |
 | `knockback` | number | `180` | Push on a hit, in pixels per second. |
-| `status` | string | none | Status to apply on a hit. A base game key such as `"burn"`, or a key from [`add_status`](statuses.md#caffeineadd_status). |
+| `status` | string | none | Status to apply on a hit. A base game key such as `"burn"`, or a key from [`add_status`](statuses.md#mycoadd_status). |
 | `status_seconds` | number | `3` | Duration of the status. |
 | `status_power` | number | `1` | Magnitude of the status. |
 | `tint` | table | white | `{ r, g, b, a }`, each `0` to `255`. `a` is optional. Colors the sprite and the trail. |
 | `trail` | boolean | `true` | `false` removes the trail. |
 
 ```lua
-caffeine.add_projectile({
+myco.add_projectile({
     key = "spore_bolt",
     icon = "bolt.png",
     rotate = true,
@@ -53,7 +53,7 @@ caffeine.add_projectile({
 
 The id goes over the network. The host and each guest must have the same projectiles. A mod that adds a projectile is a content mod. See [Online play](online.md).
 
-`caffeine.get_projectile_id(key)` returns the id of a projectile, or `nil`.
+`myco.get_projectile_id(key)` returns the id of a projectile, or `nil`.
 
 The damage of a hit is `(base damage + status_power) * damage`. For an enemy, the base damage is its `contact_damage`. `status_power` adds only when the projectile has a `status`.
 
@@ -68,14 +68,14 @@ Spawns a projectile at a pixel position with a velocity. Returns `true` if it sp
 | Argument | Default | Description |
 |---|---|---|
 | `projectile` | required | The key, or the id. |
-| `x, y` | required | Position in pixels of the room. |
+| `x, y` | required | Position in room pixels. See [Positions](players-and-worlds.md#positions). |
 | `vx, vy` | required | Velocity in pixels per second. |
 | `damage` | `10` | Base damage. |
 | `friendly` | `false` | `true` hurts enemies. `false` hurts players. |
 
 ## Entity fields
 
-These fields go in [`add_entity`](entities.md#caffeineadd_entity) and [`edit_entity`](entities.md#caffeineedit_entity).
+These fields go in [`add_entity`](entities.md#mycoadd_entity) and [`edit_entity`](entities.md#mycoedit_entity).
 
 | Field | Type | Description |
 |---|---|---|
@@ -83,10 +83,10 @@ These fields go in [`add_entity`](entities.md#caffeineadd_entity) and [`edit_ent
 | `ai` | function | Replaces all of the AI. See [ai](#ai). |
 | `on_attack` | function | Runs on each tick of a built-in attack. See [on_attack](#on_attack). |
 
-`edit_entity` can give an AI to a base game enemy:
+`edit_entity` also works on a base game enemy. This one makes the Primitive shoot spore bolts:
 
 ```lua
-caffeine.edit_entity("primitive", { projectile = "spore_bolt", shoots_on_attack = true })
+myco.edit_entity("primitive", { projectile = "spore_bolt", shoots_on_attack = true })
 ```
 
 ### ai
@@ -106,7 +106,7 @@ The game still does these things for you:
 - The end of the `spawn`, `attack` and `knockback` states. Each one goes back to `patrol`.
 
 ```lua
-caffeine.add_entity({
+myco.add_entity({
     name = "Spore Brute",
     max_health = 40,
     contact_damage = 6,
@@ -139,7 +139,7 @@ caffeine.add_entity({
 })
 ```
 
-The AI runs on the host only. A guest sees the enemy of the host. The Authority methods of the handle always work in `ai`.
+The AI runs on the host only. A guest gets the position and the state of the enemy from the host. The Authority methods of the handle always work in `ai`, because `ai` never runs on a guest.
 
 ### on_attack
 
@@ -152,7 +152,7 @@ The built-in AI decides when to attack, with `attack_range` and `attack_cooldown
 Before each call, the enemy stands still and faces its target. Move it with `enemy:move` or `enemy:set_vel`. The hitbox of the attack is on after `attack_windup`, for `attack_duration`.
 
 ```lua
-caffeine.add_entity({
+myco.add_entity({
     name = "Spore Spitter",
     attack_range = 220,
     attack_windup = 0.3,
@@ -170,7 +170,7 @@ caffeine.add_entity({
 
 ## The enemy handle
 
-`ai` and `on_attack` get a handle. A handle stays valid while the enemy lives in the same room. After the enemy dies or walks into another room, each method raises an error, except `exists`.
+`ai` and `on_attack` get a handle. The Tier column says where a method works. See [Online play](online.md). A handle stays valid while the enemy lives in the same room. After the enemy dies or walks into another room, each method raises an error, except `exists`.
 
 | Method | Returns | Tier | Description |
 |---|---|---|---|
@@ -181,7 +181,7 @@ caffeine.add_entity({
 | `enemy:get_size()` | number | View | Draw size in pixels. |
 | `enemy:get_health()` | integer | View | Current health. |
 | `enemy:get_max_health()` | integer | View | Max health, with status effects. |
-| `enemy:get_state()` | string | View | `"spawn"`, `"patrol"`, `"chase"`, `"attack"`, `"knockback"` or another built-in state. |
+| `enemy:get_state()` | string | View | One of `"spawn"`, `"patrol"`, `"alert"`, `"chase"`, `"investigate"`, `"attack"`, `"jump_attack"`, `"charge_windup"`, `"charge"`, `"retreat"`, `"knockback"`. |
 | `enemy:get_facing()` | integer | View | `-1` left, `1` right. |
 | `enemy:on_ground()` | boolean | View | `true` on a floor. |
 | `enemy:get_target()` | number, number, Player | View | Middle of the nearest living player in the room, and the player. `nil` when there is none. |
@@ -195,7 +195,7 @@ caffeine.add_entity({
 | `enemy:set_vel(vx, vy)` | nothing | Authority | Sets the velocity now. Gravity and walls still apply. |
 | `enemy:face(dir)` | nothing | Authority | `dir` below `0` faces left. Above `0` faces right. |
 | `enemy:attack()` | boolean | Authority | Starts a melee attack with `attack_windup`, `attack_duration` and `attack_cooldown`. `false` during the cooldown, an attack or a knockback. |
-| `enemy:shoot(projectile, dx, dy)` | boolean | Authority | Fires from the middle of the enemy toward `dx, dy`, at the speed of the projectile. With no direction, it aims at the nearest player. |
+| `enemy:shoot(projectile, dx, dy)` | boolean | Authority | Fires from the middle of the enemy in the direction `dx, dy`, at the speed of the projectile. `dx, dy` is a direction: `1, 0` is right and `0, -1` is up. Its length does not matter. To aim at a point, subtract the position of the enemy from it. With no direction, it aims at the nearest player. |
 | `enemy:damage(amount)` | boolean | Authority | Hurts the enemy. Its defense applies. `true` if the hit landed. |
 | `enemy:heal(amount)` | nothing | Authority | Adds health, up to the max. |
 | `enemy:knockback(vx, vy)` | boolean | Authority | Pushes the enemy as a hit does. `mass` and super armor apply. |

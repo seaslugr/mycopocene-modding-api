@@ -24,10 +24,10 @@ The console command `fluid` lists the fluids. `fluid lava 6` pours 6 cells of la
 
 Fluids do not react with each other yet. Lava and water do not make stone or steam.
 
-## caffeine.add_fluid
+## myco.add_fluid
 
 ```lua
-local id = caffeine.add_fluid(def)
+local id = myco.add_fluid(def)
 ```
 
 Adds a fluid and returns its id. The new fluid starts as a copy of water, so give only the fields that differ.
@@ -52,7 +52,7 @@ Adds a fluid and returns its id. The new fluid starts as a copy of water, so giv
 A color is a table `{ r, g, b, a }` with values from 0 to 255. `a` is optional and defaults to 255.
 
 ```lua
-caffeine.add_fluid({
+myco.add_fluid({
     key = "mymod_acid",
     name = "Acid",
     color = { 120, 210, 40, 170 },
@@ -70,22 +70,22 @@ caffeine.add_fluid({
 
 Drops of a fluid in the air use `color` for their body and `surface_color` for their lit top.
 
-## caffeine.edit_fluid
+## myco.edit_fluid
 
 ```lua
-caffeine.edit_fluid(fluid, patches)
+myco.edit_fluid(fluid, patches)
 ```
 
-Changes fields of a fluid. `fluid` is a key or an id. `patches` takes each field of `add_fluid` but `key`.
+Changes fields of a fluid. `fluid` is a key or an id. `patches` takes each field of `add_fluid` except `key`.
 
 ```lua
-caffeine.edit_fluid("water", { color = { 30, 60, 90, 150 }, surface_color = { 110, 150, 200, 190 } })
+myco.edit_fluid("water", { color = { 30, 60, 90, 150 }, surface_color = { 110, 150, 200, 190 } })
 ```
 
-## caffeine.get_fluid_id
+## myco.get_fluid_id
 
 ```lua
-local id = caffeine.get_fluid_id(key)
+local id = myco.get_fluid_id(key)
 ```
 
 Returns the id of a fluid, or `nil`. An id is valid for one mod load only. Store a fluid by its key.
@@ -98,11 +98,12 @@ Returns the id of a fluid, or `nil`. An id is valid for one mod load only. Store
 world:add_fluid(fluid, x, y, amount)
 ```
 
-Puts fluid into the cell at pixel position `x, y`. `fluid` is a key or an id. `amount` is in cells and defaults to `1`: one cell is one full tile. A solid cell and a painted water cell take nothing. Host only.
+Puts fluid into the cell at `x, y`, in room pixels. A cell is one tile. See [Positions](players-and-worlds.md#positions). `fluid` is a key or an id. `amount` is in cells and defaults to `1`: one cell is one full tile. A solid cell and a painted water cell take nothing. Host only.
 
 ```lua
-caffeine.add_command("spring", "spring - a spring of acid over player one", function(args, world, player)
+myco.add_command("spring", "spring - a spring of acid over player one", function(args, world, player)
     local x, y = player:get_pos()
+    -- One tile is 48 pixels. Start two tiles over the middle of the player, above the head.
     for i = 1, 8 do
         world:add_fluid("mymod_acid", x, y - 48 * (i + 1), 1)
     end
@@ -118,11 +119,11 @@ local key, amount = world:get_fluid(x, y)
 Returns the key of the fluid at pixel position `x, y` and its amount from `0` to `1`. Returns `nil` for a dry place.
 
 ```lua
-caffeine.add_passive(function(world, player)
+myco.add_passive(function(world, player)
     local x, y = player:get_pos()
-    local key = world:get_fluid(x + 12, y + 30)
+    local key = world:get_fluid(x, y)
     if key == "mymod_acid" and player:get_index() == 0 then
-        caffeine.log("in acid")
+        myco.log("in acid")
     end
 end)
 ```

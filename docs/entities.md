@@ -4,10 +4,10 @@
 
 An entity type is an enemy, or an object that uses the enemy system.
 
-## caffeine.add_entity
+## myco.add_entity
 
 ```lua
-local id = caffeine.add_entity(def)
+local id = myco.add_entity(def)
 ```
 
 Registers an entity type. Returns its id. The name must be unique across the base game and all mods, because room files find an entity by its name.
@@ -21,8 +21,8 @@ Registers an entity type. Returns its id. The name must be unique across the bas
 | `anims` | table | none | Animation clips in the `sheet`. See [Animations](#animations). |
 | `sprite_tile_id` | integer | `0` | For an entity with no `sheet`: a tile of the tileset of the room. Find it with the Picker tool. |
 | `sprite_tile_id_bottom` | integer | `0` | A second tile drawn below the first. `0` is none. |
-| `use_objects_tex` | boolean | `false` | Take `sprite_tile_id` from the objects sheet and not from the tileset. |
-| `draw_size` | number | `0` | Size on screen of one 16 pixel tile. `0` is the default of 48. |
+| `use_objects_tex` | boolean | `false` | Take `sprite_tile_id` from the objects sheet. With `false`, it comes from the tileset. |
+| `draw_size` | number | `0` | Size in room pixels of one 16 pixel tile of the sprite. It is also the size of the body. `0` is the default of 48. Most enemies of the base game use about 62. |
 | `tag` | string | `"nonstatic"` | `"static"` has no movement and no gravity. |
 | `runtime_kind` | string | `"enemy"` | `"enemy"` fights. `"portal"` is the visual of a room transition. `"none"` does nothing. |
 
@@ -54,20 +54,20 @@ Registers an entity type. Returns its id. The name must be unique across the bas
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `detect_box` | table | zero | `{ left, right, top, bottom }` in pixels from the entity center. |
-| `player_y_tolerance` | number | `72` | Vertical range in which it engages the player. |
-| `herd_alert_range` | number | `240` | Radius in which it alerts enemies of its type. |
+| `detect_box` | table | all `0` | `{ left, right, top, bottom }` in pixels from the middle of the hurtbox. See [Boxes](#boxes). |
+| `player_y_tolerance` | number | `72` | Vertical range in pixels in which it engages the player. |
+| `herd_alert_range` | number | `240` | Radius in pixels in which it alerts enemies of its type. |
 | `chase_leash` | number | `0` | Maximum chase distance in pixels. `0` is no leash. |
 | `chase_duration` | number | `0` | Seconds it chases after it loses sight. `0` is the default of 5. |
-| `kite_range` | number | `0` | Distance it keeps from the player. `0` is off. |
+| `kite_range` | number | `0` | Distance in pixels it keeps from the player. `0` is off. |
 
 ### Attack
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `hurtbox` | table | zero | `{ x, y, w, h }` from the entity position. Where it can be hit. |
-| `attack_box` | table | zero | `{ x, y, w, h }`. The hitbox of its attack. |
-| `attack_range` | number | `60` | Distance at which it starts an attack. |
+| `hurtbox` | table | all `0` | `{ x, y, w, h }` in pixels. Where it can be hit. See [Boxes](#boxes). |
+| `attack_box` | table | all `0` | `{ x, y, w, h }` in pixels. The hitbox of its attack. See [Boxes](#boxes). |
+| `attack_range` | number | `60` | Distance in pixels at which it starts an attack. |
 | `attack_windup` | number | `0` | Seconds of telegraph before the hitbox is on. |
 | `attack_duration` | number | `0.26` | Seconds the hitbox is on. |
 | `attack_cooldown` | number | `1.2` | Seconds between attacks. |
@@ -75,7 +75,7 @@ Registers an entity type. Returns its id. The name must be unique across the bas
 | `jump_attack_y_range` | number | `0` | Maximum height of the player for a jump attack. `0` is off. |
 | `attack_super_armor` | boolean | `false` | A hit does not interrupt its attack. |
 | `shoots_on_attack` | boolean | `false` | The attack fires a projectile. |
-| `projectile` | string or integer | arrow | What `shoots_on_attack` fires. A key from [`add_projectile`](enemy-ai.md#caffeineadd_projectile). |
+| `projectile` | string or integer | arrow | What `shoots_on_attack` fires. A key from [`add_projectile`](enemy-ai.md#mycoadd_projectile). |
 
 ### Charge, retreat and enrage
 
@@ -102,6 +102,52 @@ Registers an entity type. Returns its id. The name must be unique across the bas
 | `ai` | function | Replaces all of the AI. See [Enemy AI](enemy-ai.md#ai). |
 | `on_attack` | function | Runs on each tick of a built-in attack. See [Enemy AI](enemy-ai.md#on_attack). |
 
+## Boxes
+
+An entity draws in a square of `draw_size` by `draw_size` pixels. `hurtbox` and `attack_box` are in pixels from the top left corner of that square. `detect_box` is a distance from the middle of the hurtbox.
+
+| Box | Origin | When the entity looks left |
+|---|---|---|
+| `hurtbox` | Top left corner of the square | Stays the same. |
+| `attack_box` | Top left corner of the square, for an entity that looks right | Mirrors to the other side of the square. |
+| `detect_box` | Middle of the `hurtbox`. Each value is the distance to that side. | Stays the same. |
+
+Make the boxes for the entity looking right. The game mirrors `attack_box` for you.
+
+The outer square is the `draw_size` square. Looking right:
+
+```
+(0,0)
+  +----------------------------+
+  |                            |
+  |          +------+ +------+ |
+  |          | hurt | |attack| |
+  |          | box  | | box  | |
+  |          +------+ +------+ |
+  |                            |
+  +----------------------------+
+                         (48,48)
+```
+
+Looking left, with the same numbers. The attack box moves to the other side, and the hurtbox stays:
+
+```
+(0,0)
+  +----------------------------+
+  |                            |
+  | +------+ +------+          |
+  | |attack| | hurt |          |
+  | | box  | | box  |          |
+  | +------+ +------+          |
+  |                            |
+  +----------------------------+
+                         (48,48)
+```
+
+An `attack_box` can go past the edge of the square, for a long reach.
+
+The body, the boxes and the middle of the entity always use the `draw_size` square. A larger [animation frame](#animations) does not change them. Turn on the console command `debug_hitboxes` to see the boxes in the game.
+
 ## Loot
 
 ```lua
@@ -127,7 +173,7 @@ Give an entity its own art with `sheet`. The sheet is a PNG file in the mod fold
 The simplest entity has a sheet with one sprite in the top left tile:
 
 ```lua
-caffeine.add_entity({
+myco.add_entity({
     name = "glass_wasp",
     sheet = "sprites/wasp.png",
     max_health = 25,
@@ -141,7 +187,7 @@ Rules:
 - The width and the height of the image must be a multiple of 16.
 - The path is relative to the mod folder and must stay in it.
 - Draw the sprite so it looks to the right. The game mirrors it when the entity looks to the left.
-- One tile draws at `draw_size` pixels on screen, 48 by default. That is 3 screen pixels for each image pixel.
+- One tile draws at `draw_size` room pixels, 48 by default. That is 3 room pixels for each pixel of the image.
 - Two entities can use the same file. The game loads it one time.
 - An image that does not load is an error.
 
@@ -165,7 +211,7 @@ sprites/spider.png, 64 by 48 pixels:
 ```
 
 ```lua
-caffeine.add_entity({
+myco.add_entity({
     name = "spider",
     sheet = "sprites/spider.png",
     anims = {
@@ -190,14 +236,14 @@ The clips are `idle`, `walk`, `attack`, `hit` and `die`. A clip you do not name 
 
 A clip that goes past the edge of the sheet is an error.
 
-A frame of `w` by `h` tiles draws at `w * draw_size` by `h * draw_size` pixels. Set the `hurtbox` and the `attack_box` to match the art.
+A frame of `w` by `h` tiles draws at `w * draw_size` by `h * draw_size` pixels. It stands on the bottom edge of the body square, centered on it, so the feet stay on the floor. The body, the boxes and the middle stay on the `draw_size` square. A box over a wide frame can have a negative `x`, or an `x + w` past `draw_size`. The health bar goes above the top of the frame.
 
 `edit_entity` accepts `sheet` and `anims` too, so a mod can give a base game enemy new art.
 
 ## Example
 
 ```lua
-caffeine.add_entity({
+myco.add_entity({
     name = "glass_wasp",
     sheet = "sprites/wasp.png",
     anims = { idle = { x = 0, y = 0, frames = 2, speed = 0.1, loop = true } },
@@ -219,25 +265,25 @@ caffeine.add_entity({
 })
 ```
 
-## caffeine.edit_entity
+## myco.edit_entity
 
 ```lua
-caffeine.edit_entity(entity, patches)
+myco.edit_entity(entity, patches)
 ```
 
-Changes fields of an entity type that exists. `patches` accepts each field of `add_entity` but `name`. Only the fields in `patches` change. `loot` replaces the full list.
+Changes fields of an entity type that exists. `patches` accepts each field of `add_entity` except `name`. Only the fields in `patches` change. `loot` replaces the full list.
 
 ```lua
-caffeine.edit_entity("primitive", { max_health = 20, move_speed = 140 })
+myco.edit_entity("primitive", { max_health = 20, move_speed = 140 })
 ```
 
-## caffeine.spawn_entity
+## myco.spawn_entity
 
 ```lua
-local ok = caffeine.spawn_entity(entity, x, y)
+local ok = myco.spawn_entity(entity, x, y)
 ```
 
-Spawns an entity at a pixel position, in the world of the callback that runs. Returns `true` if it spawned. It returns `false` outside a game session and when the room is at its enemy limit. Host only.
+Spawns an entity in the tile at `x, y`, in the world of the callback that runs. `x, y` are room pixels. See [Positions](players-and-worlds.md#positions). Returns `true` if it spawned. It returns `false` outside a game session and when the room is at its enemy limit. Host only.
 
 `world:spawn_entity(entity, x, y)` does the same on a world you name. Prefer it. See [World methods](players-and-worlds.md#world-methods).
 

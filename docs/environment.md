@@ -8,20 +8,20 @@ Each mod runs in its own global table. A global in one mod does not change a glo
 
 | Global | Value |
 |---|---|
-| `caffeine` | The API table. |
+| `myco` | The API table. |
 | `MOD_DIR` | Path of the folder of this mod. |
 | `MOD_NAME`, `MOD_VERSION` | The `name` and the `version` from [mod.toml](getting-started.md#modtoml). |
 | `math`, `string`, `table`, `utf8` | Standard Lua 5.4 libraries. |
 | base functions | `pairs`, `ipairs`, `next`, `select`, `type`, `tostring`, `tonumber`, `pcall`, `error`, `assert`, `setmetatable`, `getmetatable`, `rawget`, `rawset`, `load`, `loadfile`, `dofile`, and the rest of the base library. |
 
-Two mods cannot share data through globals. Each mod gets its own copy of the library tables (`caffeine`, `string`, `math`, `table`, `utf8`). A change to `string.format` or to a `caffeine` function in your mod changes your mod only.
+Two mods cannot share data through globals. Each mod gets its own copy of the library tables (`myco`, `string`, `math`, `table`, `utf8`). A change to `string.format` or to a `myco` function in your mod changes your mod only.
 
 `getmetatable` gives the text `"locked"` for a string, a Player, a World and a mod object. The game shares these metatables between all mods and the room scripts, so no mod can change them. A method call such as `("x"):upper()` uses the library of the game, and your copy of `string` does not change it.
 
 For speed, put the API functions you call each frame in a `local`.
 
 ```lua
-local ui_text = caffeine.ui_text
+local ui_text = myco.ui_text
 ```
 
 ## Sandbox
@@ -30,7 +30,7 @@ These do not exist: `io`, `os`, `package`, `require`, `debug`.
 
 `load`, `loadfile` and `dofile` accept Lua source only. Compiled bytecode is refused. A chunk you load runs in the global table of your mod.
 
-`loadfile` and `dofile` read files from the folder of your mod only. Give the path as `MOD_DIR .. "/items.lua"` or relative to the folder, as `"items.lua"`. An absolute path, a path with `:`, or a path with `..` raises the error `the path '...' must stay in the folder of the mod`. Each other function that takes a file of your mod (`icon`, `sheet`, `ui_image`, `load_sound`, `load_music`, `replace_asset`) has the same rule.
+`loadfile` and `dofile` read files from the folder of your mod only. Give the path as `MOD_DIR .. "/items.lua"` or relative to the folder, as `"items.lua"`. An absolute path, a path with `:`, or a path with `..` raises the error `the path '...' must stay in the folder of the mod`. Each other function that takes a file of your mod (`icon`, `sheet`, `ui_image`, `ui_button`, `load_sound`, `load_music`, `replace_asset`) has the same rule.
 
 ## Time limits
 
@@ -70,7 +70,7 @@ A failed mod registers nothing. The game starts the load again without it, so ha
 
 ### In a callback
 
-An error in a callback goes to the console as `[MOD ERROR] mod name: callback: message`. The game continues.
+An error in a callback goes to the console as `[MOD ERROR] mod name: callback: message`. The game continues. The line also goes to `logs/session.log` in the user data folder.
 
 A callback that fails 8 times in a row is disabled until the next reload. One success resets the count.
 
@@ -90,7 +90,9 @@ Use `pcall` if a definition can fail and the mod must continue.
 
 ### Content functions after the load
 
-The functions that add or change definitions work only while the mod loads: at the top of `mod.lua`, or in a file it runs with `dofile`. These are `add_item`, `add_entity`, `add_recipe`, `add_shop_entry`, `add_fluid`, `add_status`, `add_object`, and each `edit_*` and `remove_shop_entry`. In a callback they raise the error `add_item works only while the mod loads`.
+The functions that add or change definitions work only while the mod loads: at the top of `mod.lua`, or in a file it runs with `dofile`. These are `add_item`, `add_entity`, `add_projectile`, `add_recipe`, `add_shop_entry`, `add_fluid`, `add_status`, `add_object`, each `edit_*` and `remove_shop_entry`. In a callback they raise an error such as `add_item works only while the mod loads`.
+
+`add_keybind` and `add_achievement` have the same rule. They add no definitions, so this is the only rule from this part that applies to them.
 
 Online, the host and each guest must have the same definitions. A change in a callback would happen on one machine only. See [Online](online.md#content-mods).
 
@@ -123,7 +125,9 @@ The game stores the order and the enabled state in `load_order.txt` in the user 
 | Intervals | 64 |
 | `on_draw_ui` listeners | 64 |
 | Console commands | 64 |
-| UI images in use | 64 |
+| UI images in use | 256 |
+| Keybinds, across all mods | 256 |
+| Achievements, across all mods | 256 |
 | Item icon images, across all mods | 256 |
 | Item icon tiles, across all mods | 3872 |
 | Replaced game files, across all mods | 256 |

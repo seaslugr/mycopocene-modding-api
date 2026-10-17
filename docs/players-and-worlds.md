@@ -16,6 +16,47 @@ A `world` is one loaded room with the players, enemies and items in it.
 
 In splitscreen, player one can be in the camp while player two is in a cave. That is two worlds. A hook for player two gets the cave.
 
+## Positions
+
+A position in a room is in room pixels. `(0, 0)` is the top left corner of the room. `y` goes down, so a larger `y` is lower.
+
+| Unit | Size |
+|---|---|
+| One tile | 48 room pixels |
+| One pixel of a 16 pixel tile image | 3 room pixels |
+| The player sprite box | About 82 by 82 room pixels |
+| The body of the player | 72 room pixels high, with the feet on the bottom edge of the sprite box |
+
+Room pixels are a different unit from the UI pixels of [Custom UI](ui.md#units). A room position does not change when the camera moves.
+
+To get the tile of a position, divide by 48 and round down:
+
+```lua
+local col = math.floor(x / 48)
+local row = math.floor(y / 48)
+```
+
+A position of a body is the middle of the body. Each call that gives or takes a position of a body uses that point.
+
+| Call | Point |
+|---|---|
+| `player:get_pos()`, `world:get_player_pos()` | Middle of the player |
+| `player:teleport(x, y)`, `world:teleport_player(x, y)` | Puts the middle of the player at `x, y` |
+| `enemy:get_pos()`, `enemy:get_target()`, `world:get_nearest_enemy_pos()` | Middle of the enemy or the player |
+| `info.x`, `info.y` of `on_death` and `on_enemy_killed` | Middle of the enemy |
+| `obj:get_pos()` | Middle of the tile of the object |
+| `world:spawn_entity(entity, x, y)` | The enemy spawns in the tile at `x, y`. |
+
+So a value from one call is correct for each other call. This puts an item where an enemy died:
+
+```lua
+myco.on_enemy_killed(function(info, world)
+    world:spawn_item("gold", 1, info.x, info.y)
+end)
+```
+
+To find a position in the game, type `cursor` in the console. The `world` numbers at the mouse are room pixels, and the `tile` numbers are the column and the row.
+
 ## The two player numbers
 
 A player has two numbers. They are different things.
@@ -46,7 +87,7 @@ In the second row, player two is alone in its world, so its room index is `0`. `
 Use the player object:
 
 ```lua
-caffeine.on_player_damaged(function(damage, new_health, world, player)
+myco.on_player_damaged(function(damage, new_health, world, player)
     local x, y = player:get_pos()
     world:spawn_item("gold", 1, x, y)
 end)
@@ -55,7 +96,7 @@ end)
 Loop over the players of a room:
 
 ```lua
-caffeine.on_enemy_killed(function(info, world)
+myco.on_enemy_killed(function(info, world)
     for i = 0, world:get_player_count() - 1 do
         world:get_player(i):add_xp(5)
     end
@@ -65,11 +106,11 @@ end)
 Do a thing one time, with two local players:
 
 ```lua
-caffeine.set_interval(function(world, player)
+myco.set_interval(function(world, player)
     if player:get_index() ~= 0 then
         return
     end
-    caffeine.log("one minute passed")
+    myco.log("one minute passed")
 end, 60)
 ```
 
@@ -81,7 +122,7 @@ end, 60)
 |---|---|---|
 | `player:get_index()` | integer | Session index. `0` is player one. `-1` for a remote player. |
 | `player:get_room_index()` | integer | Room index. This is the `player_idx` of the world methods. |
-| `player:get_pos()` | number, number | Position in pixels. |
+| `player:get_pos()` | number, number | Middle of the player, in room pixels. See [Positions](#positions). |
 | `player:get_health()` | integer | Health. |
 | `player:get_max_health()` | integer | Maximum health. |
 | `player:get_level()` | integer | Level. |
@@ -100,11 +141,13 @@ end, 60)
 |---|---|---|
 | `player:give_item(item, qty)` | boolean | Adds items and shows the pickup notice. `qty` defaults to `1`. `false` when the items did not fit. |
 | `player:remove_item(item, qty)` | boolean | Removes items. `qty` defaults to `1`. |
+| `player:unlock_achievement(id)` | boolean | Unlocks an achievement of the mod. See [Achievements](achievements.md#unlock-and-progress). |
+| `player:add_achievement_progress(id, amount)` | boolean | Adds to the count of an achievement of the mod. See [Achievements](achievements.md#unlock-and-progress). |
 | `player:add_xp(amount)` | nothing | Adds XP, as an enemy kill does. The player gets each level the XP pays for, and `on_level_up` fires. `amount` must be `0` or more. |
 | `player:heal(amount)` | nothing | Adds health up to the maximum. Host only. |
 | `player:damage(amount)` | nothing | Damage through defense, with no knockback. Host only. |
 | `player:damage_raw(amount)` | boolean | Damage that ignores defense. Host only. |
-| `player:teleport(x, y)` | nothing | Moves the player in its room and stops it. `x` and `y` must be finite numbers. Host only. |
+| `player:teleport(x, y)` | nothing | Moves the middle of the player to `x, y` in its room, and stops it. `x` and `y` must be finite numbers. Host only. |
 | `player:apply_status(status, duration, magnitude)` | nothing | Gives a status. Host only. |
 | `player:clear_status(status)` | boolean | Takes a status off. Host only. |
 
@@ -126,7 +169,7 @@ Each world method that uses a player takes an optional `player_idx`. It is a roo
 | `world:get_room_id()` | string | The same value as `get_room_name`. |
 | `world:get_player_count()` | integer | Players in this room. |
 | `world:get_player(player_idx)` | Player or nil | Player object. `nil` when the index is out of range. |
-| `world:get_player_pos(player_idx)` | number, number | Position in pixels. |
+| `world:get_player_pos(player_idx)` | number, number | Middle of the player, in room pixels. |
 | `world:get_player_health(player_idx)` | integer | Health. |
 | `world:get_player_level(player_idx)` | integer | Level. |
 | `world:get_gold(player_idx)` | integer | Gold in the inventory of that player. |
@@ -142,11 +185,11 @@ Each world method that uses a player takes an optional `player_idx`. It is a roo
 | Method | Returns | Description |
 |---|---|---|
 | `world:damage_player(amount, player_idx)` | nothing | Damage through defense, with no knockback. Host only. |
-| `world:teleport_player(x, y, player_idx)` | nothing | Moves the player in the room. `x` and `y` must be finite numbers. Host only. |
+| `world:teleport_player(x, y, player_idx)` | nothing | Moves the middle of the player to `x, y` in the room. `x` and `y` must be finite numbers. Host only. |
 | `world:teleport_player_to_room(room_name)` | boolean | Sends each player in this world to the room. The move happens at the end of the tick, as a portal crossing does, so the callback ends in the old room. A remote player moves too. `true` if the room exists. Host only. |
-| `world:spawn_item(item, qty, x, y, player_idx)` | nothing | Drops an item. `qty` defaults to `1`. The position defaults to the player. Host only. |
+| `world:spawn_item(item, qty, x, y, player_idx)` | nothing | Drops an item. `qty` defaults to `1`. The position defaults to the middle of the player. Host only. |
 | `world:spawn_entity(entity, x, y)` | boolean | Spawns an entity. `true` if it spawned. Host only. |
 | `world:spawn_projectile(projectile, x, y, vx, vy, damage, friendly)` | boolean | Spawns a projectile. See [Enemy AI and projectiles](enemy-ai.md#worldspawn_projectile). Host only. |
 | `world:add_fluid(fluid, x, y, amount)` | nothing | Pours a fluid into a cell. See [Fluids](fluids.md#worldadd_fluid). Host only. |
 
-Positions are in pixels. One tile is 48 pixels.
+Positions are in room pixels. See [Positions](#positions).

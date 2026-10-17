@@ -2,13 +2,13 @@
 
 # Items
 
-## caffeine.add_item
+## myco.add_item
 
 ```lua
-local id = caffeine.add_item(def)
+local id = myco.add_item(def)
 ```
 
-Registers an item. Returns its id. An item name must be unique in its mod. Set the `name` global of the mod before the first call. Call it while the mod loads. In a callback it raises an error. See [Content functions after the load](environment.md#content-functions-after-the-load).
+Registers an item. Returns its id. An item name must be unique in its mod. Call it while the mod loads. In a callback it raises an error. See [Content functions after the load](environment.md#content-functions-after-the-load).
 
 | Field | Type | Default | Description |
 |---|---|---|---|
@@ -42,7 +42,7 @@ Registers an item. Returns its id. An item name must be unique in its mod. Set t
 An icon is a 16 by 16 pixel tile. Put a PNG file in the mod folder and name it in `icon`.
 
 ```lua
-caffeine.add_item({
+myco.add_item({
     name = "Spider Web",
     icon = "sprites/web.png",
 })
@@ -61,8 +61,8 @@ sprites/items.png, 48 by 32 pixels:
 ```
 
 ```lua
-caffeine.add_item({ name = "Spider Web", icon = "sprites/items.png", icon_index = 0 })
-caffeine.add_item({ name = "Spider Fang", icon = "sprites/items.png", icon_index = 1 })
+myco.add_item({ name = "Spider Web", icon = "sprites/items.png", icon_index = 0 })
+myco.add_item({ name = "Spider Fang", icon = "sprites/items.png", icon_index = 1 })
 ```
 
 Rules:
@@ -77,7 +77,7 @@ Rules:
 An animated icon uses tiles that follow each other in the image:
 
 ```lua
-caffeine.add_item({
+myco.add_item({
     name = "Blinker",
     icon = "sprites/items.png",
     icon_index = 4,
@@ -91,7 +91,7 @@ This item shows tile 4, then tile 5, each for 0.4 seconds.
 `edit_item` accepts `icon` too, so a mod can give a base game item new art:
 
 ```lua
-caffeine.edit_item("health_vial", { icon = "sprites/red_vial.png" })
+myco.edit_item("health_vial", { icon = "sprites/red_vial.png" })
 ```
 
 Online, a host and a guest must load the same content mods in the same order. If they do not, a guest can see a wrong icon on the weapon of another player.
@@ -132,7 +132,7 @@ stats = {
 A weapon needs `category = "Weapon"`, `equipable = true` and a `gear_group`.
 
 ```lua
-caffeine.add_item({
+myco.add_item({
     name = "Glass Dagger",
     icon = "sprites/dagger.png",
     category = "Weapon",
@@ -151,7 +151,7 @@ caffeine.add_item({
 ## Consumables
 
 ```lua
-caffeine.add_item({
+myco.add_item({
     name = "Big Vial",
     icon = "sprites/big_vial.png",
     category = "Consumable",
@@ -166,14 +166,14 @@ caffeine.add_item({
 })
 ```
 
-`on_use` returns `false` to keep the item.
+Return `false` from `on_use` to keep the item. Any other return uses up one item.
 
 ## Modifications
 
 A Modification is an item the player puts on gear at the crafting bench.
 
 ```lua
-caffeine.add_item({
+myco.add_item({
     name = "Venom Gland",
     icon = "sprites/gland.png",
     category = "Modification",
@@ -210,20 +210,20 @@ Status names: `"poison"`, `"burn"`, `"ice"`, `"lightning"`, `"cure"`, `"light"`,
 | L | `{ { 0, 0 }, { 0, 1 }, { 1, 1 } }` |
 | Plus | `{ { 0, 0 }, { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }` |
 
-## caffeine.edit_item
+## myco.edit_item
 
 ```lua
-caffeine.edit_item(item, patches)
+myco.edit_item(item, patches)
 ```
 
 Changes fields of an item that exists. It works on base game items and on mod items. `patches` accepts each field of `add_item`. Only the fields in `patches` change. `stats` replaces the full list. Call it while the mod loads, as `add_item`.
 
 ```lua
-caffeine.edit_item("health_vial", { rarity = "Uncommon", value = 50 })
+myco.edit_item("health_vial", { rarity = "Uncommon", value = 50 })
 
-caffeine.edit_item("copper_sword", {
+myco.edit_item("copper_sword", {
     stats = { { type = "attack_damage", value = 12 } },
 })
 ```
 
-An edit lasts for the session. A reload applies each edit again from clean base content.
+An edit lasts until the next reload. A reload starts again from the base content and runs each edit again.

@@ -21,13 +21,15 @@ Each active status has a magnitude and a time left. What the magnitude does come
 | `speed`, `atk_speed` | Takes this percent off the stat. A negative magnitude adds to it. | `40`: 60% speed. `-20`: 120% speed. |
 | `defense` | Takes this percent off the damage the body takes. A negative magnitude adds to it. | `25`: 25% less damage. |
 | `jump`, `max_hp` | Adds this percent to the stat. A negative magnitude takes it off. | `40`: 140% max HP. |
-| `gravity` | `100` turns gravity over. `-100` makes it 3 times as strong. | `50`: no gravity. |
+| `gravity` | Gravity becomes `1 - magnitude / 50` times normal. `50` is no gravity, `100` turns it over and `-100` makes it 3 times as strong. | `25`: half gravity. |
 | `shield` | Takes projectile damage until the magnitude is used up. | `20`: takes 20 damage. |
 
-## caffeine.add_status
+The `damage` of a status on a player works as [`damage_raw`](players-and-worlds.md#change): it ignores defense and is scaled to a 100 health pool. A player with 200 maximum health loses 4 health each second from a magnitude of `2`. On an enemy, the damage is the magnitude. `heals` does nothing on an enemy.
+
+## myco.add_status
 
 ```lua
-local id = caffeine.add_status(def)
+local id = myco.add_status(def)
 ```
 
 Adds a status and returns its id.
@@ -43,7 +45,7 @@ Adds a status and returns its id.
 | `stacks` | boolean | `false` | `true`: each new application is one more instance. `false`: one instance. A new application sets its magnitude and keeps the longer of the two times. |
 | `damage` | boolean | `false` | Deals the magnitude as damage each second. |
 | `heals` | boolean | `false` | Gives the magnitude as health each second. |
-| `element` | string | `"other"` | The element of its damage: `"fire"`, `"ice"`, `"poison"`, `"lightning"`, `"steam"` or `"other"`. |
+| `element` | string | `"other"` | The element of the hit of a projectile that gives this status: `"fire"`, `"ice"`, `"poison"`, `"lightning"`, `"steam"` or `"other"`. The damage each second has no element. |
 | `affects` | list | none | The stats it changes: `"speed"`, `"atk_speed"`, `"jump"`, `"gravity"`, `"defense"`, `"max_hp"`. |
 | `shield` | boolean | `false` | Takes projectile damage. |
 | `shield_regen` | number | `0` | Shield magnitude it gets back each second. |
@@ -51,7 +53,7 @@ Adds a status and returns its id.
 | `on_end` | function | none | `on_end(player, world)`. Runs when the time of the status runs out on a player. |
 
 ```lua
-caffeine.add_status({
+myco.add_status({
     key = "mymod_rot",
     name = "Rot",
     icon = "icons/rot.png",
@@ -61,7 +63,7 @@ caffeine.add_status({
     magnitude = 2,
     affects = { "speed" },
     on_end = function(player, world)
-        caffeine.log("the rot is gone")
+        myco.log("the rot is gone")
     end,
 })
 ```
@@ -71,7 +73,7 @@ caffeine.add_status({
 Use the new status anywhere a status name goes:
 
 ```lua
-caffeine.add_item({
+myco.add_item({
     name = "Rot Gland",
     icon = "icons/gland.png",
     category = "Modification",
@@ -79,22 +81,22 @@ caffeine.add_item({
 })
 ```
 
-## caffeine.edit_status
+## myco.edit_status
 
 ```lua
-caffeine.edit_status(status, patches)
+myco.edit_status(status, patches)
 ```
 
-Changes a status. `status` is a name or an id. `patches` takes each field of `add_status` but `key`. A built-in status takes no `on_tick` or `on_end`, and its special behavior (Cure, Restore) stays.
+Changes a status. `status` is a name or an id. `patches` takes each field of `add_status` except `key`. A built-in status takes no `on_tick` or `on_end`, and its special behavior (Cure, Restore) stays.
 
 ```lua
-caffeine.edit_status("burn", { magnitude = 5, icon = "icons/my_burn.png" })
+myco.edit_status("burn", { magnitude = 5, icon = "icons/my_burn.png" })
 ```
 
-## caffeine.get_status_id
+## myco.get_status_id
 
 ```lua
-local id = caffeine.get_status_id(key)
+local id = myco.get_status_id(key)
 ```
 
 Returns the id of a status, or `nil`. A mod status id is valid for one mod load only. Store a status by its key.

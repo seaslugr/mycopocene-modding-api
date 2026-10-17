@@ -1,4 +1,4 @@
-local spider_web = caffeine.add_item({
+local spider_web = myco.add_item({
     name = "Spider Web",
     icon = "sprites/web.png",
     category = "Material",
@@ -8,7 +8,7 @@ local spider_web = caffeine.add_item({
     lootbox_dropable = true,
 })
 
-local spider = caffeine.add_entity({
+local spider = myco.add_entity({
     name = "spider",
     sheet = "sprites/spider.png",
     anims = {
@@ -33,20 +33,20 @@ local spider = caffeine.add_entity({
     attack_box = { x = 36, y = 10, w = 22, h = 28 },
     detect_box = { left = 120, right = 120, top = 80, bottom = 80 },
     on_death = function(info, world)
-        caffeine.log("spider killed in " .. info.room)
+        myco.log("spider killed in " .. info.room)
     end,
 })
 
-caffeine.on_room_enter(function(world, player)
+myco.on_room_enter(function(world, player)
     local x, y = player:get_pos()
     pcall(world.spawn_entity, world, spider, x + 250, y)
 end)
 
-caffeine.on_level_up(function(level, world, player)
-    caffeine.log("player " .. player:get_index() + 1 .. " reached level " .. level)
+myco.on_level_up(function(level, world, player)
+    myco.log("player " .. player:get_index() + 1 .. " reached level " .. level)
 end)
 
-caffeine.add_recipe({
+myco.add_recipe({
     result_item_id = "health_vial",
     ingredients = {
         { item_id = spider_web, qty = 3 },
@@ -54,4 +54,4 @@ caffeine.add_recipe({
     },
 })
 
-caffeine.add_shop_entry({ item_id = spider_web, price = 20, vendor_id = 0 })
+myco.add_shop_entry({ item_id = spider_web, price = 20, vendor_id = 0 })

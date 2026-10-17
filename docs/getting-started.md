@@ -44,7 +44,7 @@ load_after = ["Cave Sounds"]
 
 | Key | Required | Use |
 |---|---|---|
-| `name` | yes | Name in the Mods menu. It is also the identity of the mod, so two mods cannot have the same name. `My Mod` and `My_Mod` count as the same name. At most 62 characters. |
+| `name` | yes | Name in the Mods menu. It is also the identity of the mod, so two mods cannot have the same name. `My Mod` and `My_Mod` count as the same name. At most 63 bytes. |
 | `version` | yes | Version text. It must start with a number, such as `"1.0.0"`. Online play and `requires` compare it. |
 | `author` | yes | Author text in the Mods menu. |
 | `icon` | no | Image of the mod in the Mods menu and on the Steam Workshop. See [icon](#icon). |
@@ -61,7 +61,7 @@ Do not change `name` after release. Saves and room files store a mod item as `na
 
 - Each line is `key = value`. A `#` starts a comment.
 - A value is text in quotes, or a list of texts in `[ ]`. A list can go over more than one line.
-- Text in `"double quotes"` takes escapes: `\n` for a new line, `\"` for a quote, `\\` for a backslash, `é` for a character.
+- Text in `"double quotes"` takes escapes: `\n` for a new line, `\"` for a quote, `\\` for a backslash and `\t` for a tab. `\u00E9` gives the character with that hex code, here `é`. `\U` takes 8 hex digits.
 - Text in `'single quotes'` takes no escapes.
 - Text in `"""three quotes"""` can go over more than one line. A line end right after the opening quotes is dropped.
 
@@ -132,7 +132,7 @@ The mod fails with an error in the Mods menu when a required mod:
 | Failed to load | `needs 'Core Lib', which did not load` |
 | Has a version that does not match | `needs 'Core Lib >= 1.2', but 'Core Lib' is version 1.0.0` |
 
-A failure goes on: a mod that requires a failed mod fails too.
+A mod that requires a failed mod also fails, and so on down the chain.
 
 `load_after` and `load_before` set the order only. Use them for a mod that works alone but must run after another mod when both are on, for example to edit the items of that mod. A name that is not installed or is off does nothing.
 
@@ -155,16 +155,90 @@ The game gives each mod three globals:
 
 ## Split a mod into files
 
-```lua
-dofile(MOD_DIR .. "/items.lua")
-dofile(MOD_DIR .. "/enemies.lua")
+The game runs `mod.lua` only. To use more files, run them from `mod.lua` with `dofile`. There is no `require`.
+
+| Rule | Detail |
+|---|---|
+| Paths start at the mod folder | `dofile("lib/util.lua")` runs `lib/util.lua` in your mod folder. `dofile(MOD_DIR .. "/lib/util.lua")` is the same. Subfolders are OK. |
+| Paths stay in the mod folder | A path with `..`, `:` or a leading `/` raises an error. See [Sandbox](environment.md#sandbox). |
+| Globals are shared in the mod | All files of one mod use the same globals. Other mods cannot see them. |
+| Order matters | Files run in the order of the `dofile` calls. A file can use only what earlier files made. |
+| Run each file one time | `dofile` has no cache. Two calls run the file two times, so an `add_item` in it adds two items. |
+| Content only while the mod loads | `add_item`, `add_entity`, `add_recipe` and the other content functions work while `mod.lua` runs, and that includes the files it runs. In a callback they raise an error. |
+
+`dofile` also returns what the file returns.
+
+### Example
+
+```
+mods/spider_pack/
+  mod.toml
+  mod.lua
+  util.lua
+  items.lua
+  enemies.lua
 ```
 
-All files of one mod share the globals of that mod. A global that `items.lua` sets is visible in `enemies.lua`. `dofile` also returns what the file returns.
+The files share values through one global table, `M`. Globals are private to the mod, so the name cannot collide with another mod.
 
-`dofile("items.lua")` works too: a relative path starts at the folder of the mod. A file outside the mod folder cannot be loaded. See [Sandbox](environment.md#sandbox).
+`mod.lua`:
 
-Register all items, entities, recipes and other content in these files, while the mod loads. A content function in a callback raises an error.
+```lua
+M = {}
+
+dofile("util.lua")
+dofile("items.lua")
+dofile("enemies.lua")
+```
+
+`util.lua`:
+
+```lua
+function M.log(msg)
+    myco.log("[" .. MOD_NAME .. "] " .. msg)
+end
+```
+
+`items.lua`:
+
+```lua
+M.web = myco.add_item({
+    name = "Spider Web",
+    icon_tile_id = 210,
+    category = "Material",
+    value = 25,
+})
+
+myco.add_recipe({
+    result_item_id = "health_vial",
+    ingredients = {
+        { item_id = M.web, qty = 3 },
+    },
+})
+```
+
+`enemies.lua` uses `M.log` and `M.web`, so it runs after `util.lua` and `items.lua`:
+
+```lua
+M.spider = myco.add_entity({
+    name = "spider",
+    sprite_tile_id = 188,
+    max_health = 40,
+    loot = {
+        { item_id = M.web, chance = 0.8, min = 1, max = 2 },
+    },
+    on_death = function(info, world)
+        M.log("spider killed in " .. info.room)
+    end,
+})
+
+myco.on_room_enter(function(world, player)
+    local x, y = player:get_pos()
+    world:spawn_entity(M.spider, x + 250, y)
+end)
+```
+
+`myco.log` writes to the in-game console during play only. A log while the mod loads goes to the game log file. In this example, the `on_death` log shows in the console.
 
 ## When mods load
 
@@ -231,7 +305,7 @@ Open the in-game console with `~`.
 | `[MOD FAIL] folder: error` | The mod failed at load. It registered nothing. |
 | `[MOD ERROR] name: callback: error` | A callback raised an error during play. |
 
-`caffeine.log(msg)` writes a line to the console.
+`myco.log(msg)` writes a line to the console.
 
 Useful console commands:
 
@@ -241,5 +315,7 @@ Useful console commands:
 | `list enemies` | Prints each entity type. |
 | `additem <item> [qty]` | Gives an item. |
 | `help` | Lists each command, with the commands of mods. |
+| `cursor` | Shows the position of the mouse in UI pixels, room pixels and tiles. Hold Ctrl to move the mouse slowly. |
+| `debug_hitboxes` | Shows the hurtbox and the attack box of each body. |
 
 A fast work loop: edit the file, go to the main menu, press Play, read the console. Each new session loads the mods again, so the game does not need a restart.

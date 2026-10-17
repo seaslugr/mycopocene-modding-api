@@ -4,7 +4,7 @@ local TICK_SECONDS = 0.25
 local TICK_DAMAGE = 7
 local BLAST_DAMAGE = 60
 
-local potato = caffeine.add_item({
+local potato = myco.add_item({
     name = "Hot Potato",
     icon_tile_id = 12,
     category = "Item",
@@ -14,24 +14,24 @@ local potato = caffeine.add_item({
 
 local fuse = {}
 
-caffeine.on_run_start(function(world, player)
+myco.on_run_start(function(world, player)
     fuse[player:get_index()] = nil
 end)
 
-caffeine.set_interval(function(world, player)
+myco.set_interval(function(world, player)
     local who = player:get_index()
     if not world:get_expedition_active() or fuse[who] then
         return
     end
     if player:give_item(potato, 1) then
         fuse[who] = FUSE_SECONDS
-        caffeine.log("Catch!")
+        myco.log("Catch!")
     else
         pcall(player.damage, player, BLAST_DAMAGE)
     end
 end, SPAWN_SECONDS)
 
-caffeine.set_interval(function(world, player)
+myco.set_interval(function(world, player)
     local who = player:get_index()
     if not fuse[who] then
         return
